@@ -116,23 +116,32 @@
         .ui-side { position: absolute; top: 25px; right: 25px; z-index: 90; }
         .mobile-controls {
             position: fixed;
-            left: 16px;
-            bottom: 14px;
+            left: max(12px, env(safe-area-inset-left));
+            right: max(12px, env(safe-area-inset-right));
+            bottom: max(12px, env(safe-area-inset-bottom));
             z-index: 95;
             display: none;
-            gap: 10px;
-            align-items: flex-end;
+            gap: clamp(10px, 2.8vw, 18px);
+            align-items: center;
+            justify-content: space-between;
+            width: min(760px, calc(100vw - 24px));
+            margin: 0 auto;
+            pointer-events: none;
         }
         .mobile-btn {
-            min-width: 98px;
-            height: 56px;
-            border-radius: 14px;
+            width: clamp(132px, 38vw, 270px);
+            height: clamp(58px, 10vh, 86px);
+            border-radius: 16px;
             border: 2px solid rgba(255,255,255,0.2);
             color: #fff;
             font-weight: 900;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            font-size: clamp(0.95rem, 2.3vw, 1.2rem);
             box-shadow: 0 8px 22px rgba(0,0,0,0.35);
             touch-action: none;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .mobile-accel { background: linear-gradient(180deg, #39d582, #0d9a50); }
         .mobile-brake { background: linear-gradient(180deg, #ff8f70, #c53d1b); }
@@ -233,6 +242,47 @@
             gap: 6px;
             align-items: center;
         }
+        .daily-panel {
+            margin-top: 10px;
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.04);
+            text-align: left;
+        }
+        .daily-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #ffe7a8;
+            font-size: 0.9em;
+            font-weight: 900;
+            letter-spacing: 0.4px;
+        }
+        .daily-date {
+            color: #c8d5ff;
+            font-size: 0.78em;
+            font-weight: 700;
+        }
+        .daily-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+            font-size: 0.82em;
+            color: #e8f1ff;
+        }
+        .daily-tag {
+            padding: 2px 7px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.16);
+            font-size: 0.74em;
+            font-weight: 900;
+        }
+        .daily-done { color: #9af7b3; border-color: rgba(120,255,160,0.5); background: rgba(30,120,70,0.35); }
+        .daily-open { color: #ffe5a1; border-color: rgba(255,220,130,0.5); background: rgba(120,95,30,0.32); }
 
         #chase-ui { position: absolute; bottom: 50px; width: 100%; text-align: center; color: var(--err); font-weight: 900; font-size: 2.5em; display: none; animation: blink 0.5s infinite; }
         #mud-ui {
@@ -276,12 +326,108 @@
             display: none;
             z-index: 91;
         }
+        #rotate-ui {
+            position: fixed;
+            inset: 0;
+            z-index: 120;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            background: rgba(3, 8, 18, 0.9);
+            color: #d9e7ff;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            font-size: clamp(1rem, 4.6vw, 1.45rem);
+        }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
-        @media (hover: none), (pointer: coarse) {
+        @media (hover: none) and (pointer: coarse) and (max-width: 900px) and (orientation: landscape) {
             .mobile-controls { display: flex; }
+            .ui-side {
+                position: fixed;
+                top: auto;
+                right: max(10px, env(safe-area-inset-right));
+                bottom: calc(max(12px, env(safe-area-inset-bottom)) + clamp(58px, 10vh, 86px) + 10px);
+                display: flex !important;
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-end;
+                z-index: 97;
+            }
+            .side-btn {
+                padding: 10px 14px;
+                font-size: 0.86em;
+                min-width: 84px;
+            }
+            #jump-btn { margin-right: 0 !important; }
+            .hud {
+                top: max(10px, env(safe-area-inset-top));
+                left: max(10px, env(safe-area-inset-left));
+            }
+            #chase-ui { font-size: clamp(1.25em, 4.5vw, 2em); bottom: 98px; }
+            #mud-ui { font-size: clamp(1em, 4vw, 1.45em); bottom: 150px; }
         }
-        @media (max-height: 780px) {
+        @media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+            .mobile-controls { display: none !important; }
+            #rotate-ui { display: flex; }
+        }
+        @media (hover: none) and (pointer: coarse) and (max-width: 1200px) {
+            .card {
+                width: min(640px, 96vw);
+                padding: 20px;
+                border-radius: 18px;
+            }
+            .hero-title { font-size: clamp(1.8rem, 4vw, 2.3rem); }
+            .hero-sub { font-size: clamp(0.72rem, 1.9vw, 0.9rem); margin-bottom: 10px; }
+            .tabs { gap: 8px; margin-bottom: 10px; }
+            .tab-btn { padding: 10px; font-size: 0.9em; }
+            .menu-btn { padding: 12px; font-size: 0.95em; }
+            .item-row { padding: 10px; margin: 7px 0; }
+            .scroll-area { max-height: min(210px, 28vh); }
+            #garage-canvas { height: min(140px, 17vh); }
+            .daily-row { font-size: 0.78em; }
+            .hud { top: 10px; left: 10px; }
+            .hud-top { gap: 8px; }
+            #speedo { font-size: clamp(1.7rem, 4.7vw, 2.55rem); }
+            .hud-meta { gap: 8px; font-size: clamp(0.72rem, 1.8vw, 0.92rem); flex-wrap: wrap; max-width: min(94vw, 760px); }
+            .hud-mission { font-size: clamp(0.7rem, 1.8vw, 0.88rem); max-width: min(94vw, 760px); }
+            .bar-wrap { width: min(220px, 43vw); height: 17px; }
+            .bar-label { font-size: 10px; line-height: 17px; }
+            #chase-ui { font-size: clamp(1rem, 3.2vw, 1.7rem); }
+            #mud-ui { font-size: clamp(0.95rem, 2.8vw, 1.35rem); }
+            #crash-ui, #event-ui { font-size: clamp(0.72rem, 2vw, 0.92rem); top: 10px; }
+            #event-ui { top: 42px; }
+        }
+        @media (max-width: 700px) {
+            .card {
+                width: 96vw;
+                padding: 16px;
+                border-radius: 14px;
+            }
+            .home-ribbon { font-size: 0.68em; padding: 6px 8px; margin-bottom: 6px; }
+            .hero-title { font-size: 1.62rem; }
+            .hero-sub { font-size: 0.7rem; letter-spacing: 0.6px; }
+            .hud { top: 8px; left: 8px; }
+            .hud-top > div:first-child { font-size: 1.04em !important; }
+            .hud-top > div:last-child { font-size: 0.82em !important; }
+            #speedo { margin: 2px 0; font-size: 1.55rem; }
+            .hud-meta { gap: 6px; font-size: 0.68rem; }
+            .hud-mission { margin-top: 4px; font-size: 0.66rem; }
+            .bar-wrap { width: min(170px, 52vw); height: 14px; margin-top: 7px; }
+            .bar-label { font-size: 8px; line-height: 14px; }
+            #chase-ui { bottom: 90px; font-size: 0.95rem; }
+            #mud-ui { bottom: 128px; font-size: 0.85rem; }
+            #crash-ui, #event-ui {
+                max-width: 92vw;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+        @media (max-height: 780px) and (pointer: fine) {
             .card { padding: 22px; border-radius: 20px; }
             .hero-title { font-size: 2.15em; margin-bottom: 2px; }
             .hero-sub { margin-bottom: 10px; font-size: 0.78em; }
@@ -313,17 +459,18 @@
 </div>
 
 <div class="ui-side" id="ui-side" style="display:none">
-    <button class="side-btn" style="margin-right:8px; background:linear-gradient(180deg,#8ff4ff,#28c7f4); box-shadow:0 5px #0c6e93;" onclick="queueJump()">JUMP</button>
-    <button class="side-btn" onclick="togglePause()">PAUSE</button>
+    <button class="side-btn" id="jump-btn" style="margin-right:8px; background:linear-gradient(180deg,#8ff4ff,#28c7f4); box-shadow:0 5px #0c6e93;" onclick="queueJump()">JUMP</button>
+    <button class="side-btn" id="pause-btn" onclick="togglePause()">PAUSE</button>
 </div>
 
 <div id="chase-ui">POLICE PURSUIT IN PROGRESS</div>
 <div id="mud-ui">MUD WARNING</div>
 <div id="crash-ui">CRASH WARNING</div>
 <div id="event-ui">BONUS!</div>
+<div id="rotate-ui">ROTATE DEVICE TO LANDSCAPE</div>
 <div class="mobile-controls" id="mobile-controls">
-    <button class="mobile-btn mobile-accel" id="accel-btn">ACCEL</button>
-    <button class="mobile-btn mobile-brake" id="brake-btn">BRAKE</button>
+    <button class="mobile-btn mobile-accel" id="accel-btn">START</button>
+    <button class="mobile-btn mobile-brake" id="brake-btn">BRAKE/BACK</button>
 </div>
 
 <div id="menu" class="overlay">
@@ -343,6 +490,7 @@
             <div id="upgrade-cars" class="up-cars"></div>
             <div id="upgrade-panel" class="upgrade-panel"></div>
         </div>
+        <div id="daily-missions" class="daily-panel"></div>
         <button class="menu-btn go" onclick="start()">START ENGINE</button>
         <div class="garage-foot">
             <div class="tips">Shift = Nitro | Space = Brake</div>
@@ -454,6 +602,11 @@ const MISSIONS = [
     { type: "nitro", target: 220, reward: 1500, text: "Use nitro for 220 frames" },
     { type: "distance", target: 1600, reward: 2300, text: "Reach 1600m in one run" }
 ];
+const DAILY_MISSIONS = [
+    { type: "distance", target: 4000, reward: 900, text: "Drive 4000m today" },
+    { type: "near", target: 15, reward: 1200, text: "Perform 15 near misses today" },
+    { type: "nitro", target: 900, reward: 1000, text: "Use nitro for 900 frames today" }
+];
 
 let car = { x: 100, y: 0, vx: 0, vy: 0, rot: 0, fuel: 100, fuelCap: 100, runC: 0, nitro: 100, wRot: 0, onGround: false, jumpCd: 0, crashCount: 0, warnUntil: 0, fireFrames: 0, comboFrames: 0, comboBonus: 0, comboMult: 1, nearMissCount: 0, nitroFrames: 0, airFrames: 0, burningOut: false };
 let cop = { x: -1500, vx: 0, active: false, pulse: 0, minSpd: 14.5, warningSpeed: GAME_RULES.warningSpeedKmh, engaged: false, cool: 0, speedingFrames: 0, slowFrames: 0, restFrames: 0 };
@@ -464,9 +617,80 @@ let eventFrames = 0;
 let slowMoFrames = 0;
 let missionCooldown = 0;
 let lastDifficultyTier = 0;
+let daily = { dateKey: "", stats: { distance: 0, near: 0, nitro: 0 }, claimed: new Array(DAILY_MISSIONS.length).fill(false) };
 
 function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
+}
+
+function getLocalDayKey() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function saveDailyState() {
+    localStorage.setItem('hc_ult_daily', JSON.stringify(daily));
+}
+
+function ensureDailyState() {
+    const key = getLocalDayKey();
+    if(daily.dateKey !== key) {
+        daily = {
+            dateKey: key,
+            stats: { distance: 0, near: 0, nitro: 0 },
+            claimed: new Array(DAILY_MISSIONS.length).fill(false)
+        };
+        saveDailyState();
+    }
+}
+
+function loadDailyState() {
+    const raw = localStorage.getItem('hc_ult_daily');
+    if(raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            if(parsed && parsed.stats && Array.isArray(parsed.claimed)) {
+                daily = {
+                    dateKey: parsed.dateKey || "",
+                    stats: {
+                        distance: Math.max(0, parsed.stats.distance || 0),
+                        near: Math.max(0, parsed.stats.near || 0),
+                        nitro: Math.max(0, parsed.stats.nitro || 0)
+                    },
+                    claimed: new Array(DAILY_MISSIONS.length).fill(false).map((_, i) => !!parsed.claimed[i])
+                };
+            }
+        } catch(_) {}
+    }
+    ensureDailyState();
+}
+
+function getDailyProgress(runDist = 0, runNear = 0, runNitro = 0) {
+    return {
+        distance: daily.stats.distance + runDist,
+        near: daily.stats.near + runNear,
+        nitro: daily.stats.nitro + runNitro
+    };
+}
+
+function resolveDailyMissionRewards(progress, showToast = true) {
+    let changed = false;
+    for(let i=0; i<DAILY_MISSIONS.length; i++) {
+        const m = DAILY_MISSIONS[i];
+        if(!daily.claimed[i] && progress[m.type] >= m.target) {
+            daily.claimed[i] = true;
+            state.wallet += m.reward;
+            changed = true;
+            if(showToast) showEvent(`DAILY MISSION +$${m.reward}`, 180);
+        }
+    }
+    if(changed) {
+        localStorage.setItem('hc_ult_s', state.wallet);
+        saveDailyState();
+    }
 }
 
 function normalizeUpgradeStore() {
@@ -563,8 +787,10 @@ const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height =
 window.onresize = resize; resize();
 initPools();
 normalizeUpgradeStore();
+loadDailyState();
 
 function updateUI() {
+    ensureDailyState();
     document.getElementById('wallet').innerText = state.wallet;
     document.getElementById('best').innerText = state.hiDist;
     document.getElementById('spd-limit').innerText = MODELS[state.selC].speedLimit;
@@ -623,6 +849,19 @@ function updateUI() {
             <button class="mini-btn" onclick="upgradePart('${k}')" ${(maxed || !canUpgrade) ? 'disabled' : ''}>${maxed ? 'MAX' : '$' + cost}</button>
         </div>`;
     });
+
+    const dailyProgress = getDailyProgress();
+    const dailyBox = document.getElementById('daily-missions');
+    dailyBox.innerHTML = `<div class="daily-head"><span>DAILY MISSIONS</span><span class="daily-date">${daily.dateKey}</span></div>`;
+    for(let i=0; i<DAILY_MISSIONS.length; i++) {
+        const dm = DAILY_MISSIONS[i];
+        const progress = dailyProgress[dm.type];
+        const done = daily.claimed[i];
+        dailyBox.innerHTML += `<div class="daily-row">
+            <span>${dm.text} (${Math.min(progress, dm.target)}/${dm.target})</span>
+            <span class="daily-tag ${done ? 'daily-done' : 'daily-open'}">${done ? 'DONE' : '$' + dm.reward}</span>
+        </div>`;
+    }
 
     previewCar(state.selC);
 }
@@ -707,6 +946,7 @@ function togglePause() {
 }
 
 function start() {
+    ensureDailyState();
     const s = STAGES[state.selS];
     const vm = getVehicleStats(MODELS[state.selC]);
     terrain = []; items = []; obstacles = []; muds = []; boosts = [];
@@ -714,16 +954,18 @@ function start() {
     slowMoFrames = 0;
     missionCooldown = 0;
     lastDifficultyTier = 0;
+    const shortScreenScale = clamp(h / 900, 0.58, 1);
+    const groundBase = h * (h < 560 ? 0.62 : 0.7);
     // Generate infinite-feeling terrain
     for(let i=0; i<8000; i++) {
         let distanceFactor = 1 + Math.min(i / 2200, 2.4);
-        let roughness = (58 + Math.min(i/4.5, 120)) * s.rough * distanceFactor;
-        let ty = h * 0.7
+        let roughness = (58 + Math.min(i/4.5, 120)) * s.rough * distanceFactor * shortScreenScale;
+        let ty = groundBase
             + Math.sin(i * s.waveA) * roughness
             + Math.cos(i * s.waveB) * (roughness / 2)
-            + Math.sin(i * (s.waveA * 2.05)) * (12 + distanceFactor * 16);
+            + Math.sin(i * (s.waveA * 2.05)) * (12 + distanceFactor * 16) * shortScreenScale;
         if(i > 1200 && i % 58 === 0 && Math.random() > 0.72) {
-            ty += 26 + distanceFactor * 26; // Deeper pits later in the run.
+            ty += (26 + distanceFactor * 26) * shortScreenScale; // Deeper pits later in the run.
         }
         terrain.push({x: i * 100, y: ty});
         
@@ -851,6 +1093,9 @@ function loop() {
 
     let speedKmh = Math.max(0, car.vx * 12);
     const runDist = Math.floor(car.x / 10);
+    ensureDailyState();
+    const liveDailyProgress = getDailyProgress(runDist, car.nearMissCount, car.nitroFrames);
+    resolveDailyMissionRewards(liveDailyProgress, true);
     const difficultyTier = Math.floor(runDist / CONFIG.difficulty.distanceStepMeters);
     if(difficultyTier > lastDifficultyTier) {
         lastDifficultyTier = difficultyTier;
@@ -1083,6 +1328,12 @@ function endGame(msg) {
     state.active = false;
     state.wallet += car.runC;
     let dist = Math.floor(car.x / 10);
+    ensureDailyState();
+    daily.stats.distance += dist;
+    daily.stats.near += car.nearMissCount;
+    daily.stats.nitro += car.nitroFrames;
+    resolveDailyMissionRewards(getDailyProgress(), false);
+    saveDailyState();
     if(dist > state.hiDist) {
         state.hiDist = dist;
         localStorage.setItem('hc_ult_h', dist);
