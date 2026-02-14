@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Time Hub</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-color: #1c1e21;
+            --accent-color: #007bff;
+            --danger-color: #dc3545;
+            --nav-bg: #212529;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e4e6eb;
+            --nav-bg: #000000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+
+        /* Sidebar Navigation */
+        nav {
+            width: 80px;
+            background: var(--nav-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 25px;
+            z-index: 100;
+        }
+
+        nav button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.6;
+            transition: 0.2s;
+        }
+
+        nav button.active { opacity: 1; color: var(--accent-color); }
+
+        /* Main Content Areas */
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .view {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .view.active { display: flex; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Clock Styles */
+        .analog-clock {
+            width: 250px;
+            height: 250px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            border: 6px solid var(--text-color);
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom;
+            background: var(--text-color);
+            border-radius: 4px;
+            transform: translateX(-50%);
+        }
+
+        .hour { width: 6px; height: 50px; }
+        .minute { width: 4px; height: 80px; }
+        .second { width: 2px; height: 90px; background: var(--danger-color); }
+
+        /* Stopwatch & Alarm UI */
+        .display { font-size: 4rem; font-weight: bold; margin: 20px 0; font-variant-numeric: tabular-nums; }
+        
+        .controls { display: flex; gap: 15px; }
+
+        button.primary {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        input[type="time"] {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+
+        .alarm-list {
+            margin-top: 20px;
+            width: 200px;
+            text-align: center;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            background: var(--card-bg);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <button onclick="showView('clock-view')" id="nav-clock" class="active">🕒<br>Clock</button>
+        <button onclick="showView('stopwatch-view')" id="nav-stopwatch">⏱️<br>Timer</button>
+        <button onclick="showView('alarm-view')" id="nav-alarm">🔔<br>Alarm</button>
+    </nav>
+
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 Mode</button>
+
+    <main>
+        <div id="clock-view" class="view active">
+            <div class="analog-clock">
+                <div class="hand hour" id="h-hand"></div>
+                <div class="hand minute" id="m-hand"></div>
+                <div class="hand second" id="s-hand"></div>
+            </div>
+            <div class="display" id="clock-digital">00:00:00</div>
+            <div id="clock-date">Date Loading...</div>
+        </div>
+
+        <div id="stopwatch-view" class="view">
+            <h2>Stopwatch</h2>
+            <div class="display" id="sw-display">00:00.00</div>
+            <div class="controls">
+                <button class="primary" onclick="startStopwatch()" id="sw-start">Start</button>
+                <button onclick="resetStopwatch()">Reset</button>
+            </div>
+        </div>
+
+        <div id="alarm-view" class="view">
+            <h2>Set Alarm</h2>
+            <input type="time" id="alarm-time">
+            <button class="primary" onclick="setAlarm()">Set Alarm</button>
+            <div class="alarm-list" id="alarm-status">No alarm set</div>
+            <button id="stop-alarm-btn" style="display:none; margin-top:10px; background:var(--danger-color); color:white; border:none; padding:10px;" onclick="stopAlarm()">SILENCE ALARM</button>
+        </div>
+    </main>
+
+    <script>
+        // --- VIEW NAVIGATION ---
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            document.getElementById('nav-' + viewId.split('-')[0]).classList.add('active');
+        }
+
+        // --- CLOCK LOGIC ---
+        function updateClock() {
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+
+            document.getElementById('clock-digital').innerText = 
+                `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            
+            const sRot = s / 60;
+            const mRot = (sRot + m) / 60;
+            const hRot = (mRot + h) / 12;
+
+            document.getElementById('s-hand').style.transform = `translateX(-50%) rotate(${sRot * 360}deg)`;
+            document.getElementById('m-hand').style.transform = `translateX(-50%) rotate(${mRot * 360}deg)`;
+            document.getElementById('h-hand').style.transform = `translateX(-50%) rotate(${hRot * 360}deg)`;
+
+            checkAlarm(h, m);
+        }
+        setInterval(updateClock, 1000);
+
+        // --- STOPWATCH LOGIC ---
+        let swInterval;
+        let swTime = 0; // in milliseconds
+        function startStopwatch() {
+            const btn = document.getElementById('sw-start');
+            if (btn.innerText === "Start") {
+                const startTime = Date.now() - swTime;
+                swInterval = setInterval(() => {
+                    swTime = Date.now() - startTime;
+                    const ms = Math.floor((swTime % 1000) / 10);
+                    const sec = Math.floor((swTime / 1000) / 60);
+                    const totalSec = Math.floor(swTime / 1000) % 60;
+                    document.getElementById('sw-display').innerText = 
+                        `${String(sec).padStart(2,'0')}:${String(totalSec).padStart(2,'0')}.${String(ms).padStart(2,'0')}`;
+                }, 10);
+                btn.innerText = "Pause";
+            } else {
+                clearInterval(swInterval);
+                btn.innerText = "Start";
+            }
+        }
+        function resetStopwatch() {
+            clearInterval(swInterval);
+            swTime = 0;
+            document.getElementById('sw-display').innerText = "00:00.00";
+            document.getElementById('sw-start').innerText = "Start";
+        }
+
+        // --- ALARM LOGIC ---
+        let activeAlarm = null;
+        let isAlarmPlaying = false;
+        const alarmSound = new Audio('https://actions.google.com/sounds/v1/alarms/beep_loop.ogg');
+        alarmSound.loop = true;
+
+        function setAlarm() {
+            const timeVal = document.getElementById('alarm-time').value;
+            if (timeVal) {
+                activeAlarm = timeVal;
+                document.getElementById('alarm-status').innerText = "Alarm set for " + timeVal;
+            }
+        }
+
+        function checkAlarm(h, m) {
+            const currentTime = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+            if (activeAlarm === currentTime && !isAlarmPlaying) {
+                triggerAlarm();
+            }
+        }
+
+        function triggerAlarm() {
+            isAlarmPlaying = true;
+            alarmSound.play();
+            document.getElementById('stop-alarm-btn').style.display = 'block';
+            showView('alarm-view');
+            alert("⏰ ALARM RINGING!");
+        }
+
+        function stopAlarm() {
+            isAlarmPlaying = false;
+            activeAlarm = null;
+            alarmSound.pause();
+            alarmSound.currentTime = 0;
+            document.getElementById('stop-alarm-btn').style.display = 'none';
+            document.getElementById('alarm-status').innerText = "No alarm set";
+        }
+
+        // --- UTILS ---
+        function toggleTheme() {
+            const body = document.body;
+            body.setAttribute('data-theme', body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        }
+    </script>
+</body>
+</html>

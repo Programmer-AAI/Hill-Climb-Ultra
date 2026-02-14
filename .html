@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hill Climb Ultra: Ultimate Edition</title>
+    <style>
+        :root {
+            --p: #ffd447;
+            --s: #25c86b;
+            --err: #ff4b2b;
+            --d: #13161e;
+            --n: #00d2ff;
+            --ink: #d6e0ff;
+            --card2: #1f2734;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Trebuchet MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(1200px 700px at 15% -10%, rgba(0, 210, 255, 0.2), transparent 55%),
+                radial-gradient(1000px 650px at 95% 0%, rgba(255, 212, 71, 0.18), transparent 45%),
+                linear-gradient(180deg, #0a0e17 0%, #05070c 100%);
+            color: white;
+            user-select: none;
+        }
+        canvas { display: block; }
+        
+        /* Overlays */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(2, 4, 10, 0.78);
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .card {
+            background: linear-gradient(160deg, var(--d), var(--card2));
+            padding: 34px;
+            border-radius: 28px;
+            border: 2px solid rgba(255, 255, 255, 0.14);
+            width: 560px;
+            text-align: center;
+            box-shadow: 0 30px 65px rgba(0,0,0,0.55), 0 0 0 2px rgba(255, 212, 71, 0.15) inset;
+            position: relative;
+        }
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 8px;
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.07);
+            pointer-events: none;
+        }
+        .hero-title {
+            margin-bottom: 6px;
+            font-size: 2.8em;
+            letter-spacing: -1px;
+            color: var(--p);
+            text-shadow: 0 0 28px rgba(255, 212, 71, 0.25);
+        }
+        .hero-sub {
+            margin: 0 0 22px;
+            color: var(--ink);
+            opacity: 0.85;
+            font-size: 0.95em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .garage-foot {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            color: var(--ink);
+        }
+        .tips {
+            text-align: left;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 12px;
+            padding: 8px 10px;
+            font-size: 0.78em;
+            line-height: 1.35;
+        }
+        
+        /* HUD */
+        .hud { position: absolute; top: 25px; left: 25px; z-index: 50; pointer-events: none; }
+        .hud-top { display: flex; align-items: baseline; gap: 15px; }
+        .hud-meta { display: flex; gap: 12px; font-size: 1em; color: #c8d5ff; font-weight: 700; }
+        .ui-side { position: absolute; top: 25px; right: 25px; z-index: 90; }
+        .mobile-controls {
+            position: fixed;
+            left: 16px;
+            bottom: 14px;
+            z-index: 95;
+            display: none;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .mobile-btn {
+            min-width: 98px;
+            height: 56px;
+            border-radius: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
+            color: #fff;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+            touch-action: none;
+        }
+        .mobile-accel { background: linear-gradient(180deg, #39d582, #0d9a50); }
+        .mobile-brake { background: linear-gradient(180deg, #ff8f70, #c53d1b); }
+        
+        /* Buttons */
+        button { cursor: pointer; border: none; border-radius: 12px; font-weight: bold; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); outline: none; }
+        button:hover { transform: scale(1.05); }
+        button:active { transform: scale(0.95); }
+        
+        .side-btn { background: linear-gradient(180deg, #ffe993, var(--p)); color: #000; padding: 15px 30px; font-size: 1.1em; box-shadow: 0 5px #a97f00; }
+        .menu-btn { width: 100%; padding: 16px; margin: 8px 0; font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px; }
+        .go { background: linear-gradient(180deg, #43e186, var(--s)); color: #092717; border-bottom: 5px solid #159a4b; margin-top: 18px; }
+        .buy { background: linear-gradient(180deg, #ffe484, var(--p)); color: #1f1d14; padding: 10px 20px; }
+        .sel { background: linear-gradient(180deg, #3de68d, var(--s)); color: #062415; padding: 10px 20px; }
+        .pause-opt { background: #444; color: white; border-bottom: 4px solid #222; }
+
+        /* Progress Bars */
+        .bar-wrap { width: 250px; height: 20px; background: #333; border-radius: 10px; overflow: hidden; margin-top: 10px; border: 2px solid #555; position: relative; }
+        .bar-label { position: absolute; width: 100%; text-align: center; font-size: 11px; line-height: 20px; font-weight: 900; color: white; text-shadow: 1px 1px 2px #000; z-index: 2; }
+        #f-bar { height: 100%; background: linear-gradient(90deg, #ff4b2b, #ff9068); width: 100%; transition: width 0.1s; }
+        #n-bar { height: 100%; background: linear-gradient(90deg, #00d2ff, #3a7bd5); width: 100%; }
+
+        /* Typography */
+        #speedo { font-size: 3.5em; font-weight: 900; margin: 5px 0; font-variant-numeric: tabular-nums; }
+        .nitro-txt { color: var(--n); text-shadow: 0 0 20px var(--n); }
+        
+        /* Lists */
+        .tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+        .tab-btn { flex: 1; background: rgba(255,255,255,0.08); color: white; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .tab-btn.active { background: linear-gradient(180deg, #ffe484, var(--p)); color: #101114; }
+        .scroll-area { max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        .scroll-area::-webkit-scrollbar { width: 6px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: var(--p); border-radius: 10px; }
+        .item-row {
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+            margin: 10px 0;
+            padding: 14px;
+            border-radius: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: transform .2s ease, border-color .2s ease;
+        }
+        .item-row:hover { transform: translateY(-2px); border-color: rgba(255, 212, 71, 0.55); }
+        .stat-chip {
+            font-size: 0.72em;
+            margin-top: 3px;
+            display: inline-block;
+            padding: 3px 7px;
+            border-radius: 999px;
+            color: #cdd8ff;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .garage-preview {
+            margin-bottom: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(255,255,255,0.02));
+        }
+        #garage-canvas { display: block; width: 100%; height: 170px; }
+
+        #chase-ui { position: absolute; bottom: 50px; width: 100%; text-align: center; color: var(--err); font-weight: 900; font-size: 2.5em; display: none; animation: blink 0.5s infinite; }
+        #mud-ui {
+            position: absolute;
+            bottom: 106px;
+            width: 100%;
+            text-align: center;
+            color: #ffb071;
+            font-weight: 900;
+            font-size: 1.8em;
+            display: none;
+            text-shadow: 0 0 14px rgba(255, 94, 0, 0.6);
+        }
+        #crash-ui {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 14px;
+            border-radius: 10px;
+            background: rgba(140, 0, 0, 0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ffe7a6;
+            font-weight: 900;
+            font-size: 1em;
+            display: none;
+            z-index: 91;
+        }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+
+        @media (hover: none), (pointer: coarse) {
+            .mobile-controls { display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="hud-container" class="hud" style="display:none">
+    <div class="hud-top">
+        <div style="font-size: 1.4em; font-weight: bold;">DISTANCE: <span id="dist">0</span>m</div>
+        <div style="font-size: 1em; color: var(--p);">BEST: <span id="best">0</span>m</div>
+    </div>
+    <div id="speedo"><span id="kmh">0</span> <small style="font-size: 0.4em;">KM/H</small></div>
+    <div class="hud-meta">
+        <div>LIMIT: <span id="spd-limit">0</span> KM/H</div>
+        <div>COINS: $<span id="coins-run">0</span></div>
+        <div>COMBO: x<span id="combo-mult">1.0</span></div>
+        <div>BONUS: $<span id="combo-bonus">0</span></div>
+    </div>
+    <div class="bar-wrap"><div class="bar-label">FUEL TANK</div><div id="f-bar"></div></div>
+    <div class="bar-wrap"><div class="bar-label">NITRO BOOST</div><div id="n-bar"></div></div>
+</div>
+
+<div class="ui-side" id="ui-side" style="display:none">
+    <button class="side-btn" style="margin-right:8px; background:linear-gradient(180deg,#8ff4ff,#28c7f4); box-shadow:0 5px #0c6e93;" onclick="queueJump()">JUMP</button>
+    <button class="side-btn" onclick="togglePause()">PAUSE</button>
+</div>
+
+<div id="chase-ui">POLICE PURSUIT IN PROGRESS</div>
+<div id="mud-ui">MUD WARNING</div>
+<div id="crash-ui">CRASH WARNING</div>
+<div class="mobile-controls" id="mobile-controls">
+    <button class="mobile-btn mobile-accel" id="accel-btn">ACCEL</button>
+    <button class="mobile-btn mobile-brake" id="brake-btn">BRAKE</button>
+</div>
+
+<div id="menu" class="overlay">
+    <div class="card">
+        <h1 class="hero-title">HILL CLIMB <span style="color:white">ULTRA</span></h1>
+        <p class="hero-sub">Build your garage. Own the road. Outrun the sirens.</p>
+        <div class="tabs">
+            <button class="tab-btn active" id="t-car" onclick="switchTab('car')">VEHICLES</button>
+            <button class="tab-btn" id="t-stg" onclick="switchTab('stg')">STAGES</button>
+        </div>
+        <div class="garage-preview"><canvas id="garage-canvas" width="520" height="170"></canvas></div>
+        <div id="car-view"><div id="car-list" class="scroll-area"></div></div>
+        <div id="stg-view" style="display:none"><div id="stage-list" class="scroll-area"></div></div>
+        <button class="menu-btn go" onclick="start()">START ENGINE</button>
+        <div class="garage-foot">
+            <div class="tips">Shift = Nitro | Space = Brake</div>
+            <p style="font-size: 1.15em; margin: 0;">BANK: <b style="color:var(--p)">$<span id="wallet">0</span></b></p>
+        </div>
+    </div>
+</div>
+
+<div id="pause-menu" class="overlay" style="display:none">
+    <div class="card" style="width: 350px;">
+        <h1 style="color:var(--p)">PAUSED</h1>
+        <button class="menu-btn go" onclick="togglePause()">RESUME</button>
+        <button class="menu-btn pause-opt" onclick="start()">RESTART</button>
+        <button class="menu-btn pause-opt" style="background:#cc3333" onclick="location.reload()">GARAGE</button>
+    </div>
+</div>
+
+<div id="results-menu" class="overlay" style="display:none">
+    <div class="card">
+        <h1 id="res-title" style="color:var(--err); font-size: 3em;">RUN OVER</h1>
+        <div style="font-size: 1.5em; margin: 20px 0;">
+            <p>DISTANCE: <b id="res-dist">0</b>m</p>
+            <p>COLLECTED: <b id="res-coins" style="color:var(--p)">$0</b></p>
+        </div>
+        <button class="menu-btn go" onclick="start()">TRY AGAIN</button>
+        <button class="menu-btn pause-opt" onclick="location.reload()">BACK TO GARAGE</button>
+    </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+/**
+ * CORE CONFIGURATION
+ */
+const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+const garageCanvas = document.getElementById('garage-canvas'), garageCtx = garageCanvas.getContext('2d');
+let w, h, terrain = [], items = [], obstacles = [], muds = [], keys = {}, isPaused = false;
+let coinRot = 0;
+let previewCarIndex = 0;
+let jumpQueued = false;
+let camShakeFrames = 0, camShakePower = 0;
+
+const MODELS = [
+    { name: "Sedan X", price: 0, top: 10, pwr: 0.2, speedLimit: 118, color: "#3498db", accent: "#9dd6ff", w: 75, h: 22, wheel: 11, mass: 1.0, grip: 1.0, air: 1.0, jump: 8.8 },
+    { name: "Beast Truck", price: 1000, top: 11.5, pwr: 0.22, speedLimit: 126, color: "#e67e22", accent: "#ffd39c", w: 85, h: 42, wheel: 20, mass: 1.85, grip: 1.1, air: 0.55, jump: 7.2 },
+    { name: "Desert King", price: 2500, top: 14, pwr: 0.28, speedLimit: 142, color: "#2ecc71", accent: "#b9ffd5", w: 90, h: 35, wheel: 16, mass: 1.35, grip: 1.06, air: 0.82, jump: 8.1 },
+    { name: "Volt Hyper", price: 5000, top: 18, pwr: 0.38, speedLimit: 162, color: "#f1c40f", accent: "#fff3a8", w: 95, h: 18, wheel: 10, mass: 0.9, grip: 0.95, air: 1.15, jump: 10.2 },
+    { name: "F1 Supreme", price: 10000, top: 22.5, pwr: 0.48, speedLimit: 180, color: "#e74c3c", accent: "#ffc1b7", w: 110, h: 14, wheel: 12, mass: 0.72, grip: 1.02, air: 0.85, jump: 11.4 },
+    { name: "Police Interceptor", price: 15000, top: 24, pwr: 0.52, speedLimit: 195, color: "#000000", accent: "#87b6ff", w: 85, h: 30, wheel: 12, mass: 0.95, grip: 1.1, air: 0.8, jump: 9.8 }
+];
+
+const STAGES = [
+    { name: "Nature Valley", sky: "#87CEEB", ground: "#2ecc71", line: "#27ae60", grav: 0.42, friction: 0.97, rough: 1.0, waveA: 0.24, waveB: 0.12 },
+    { name: "Tokyo Drift", sky: "#0a0b1e", ground: "#222", line: "#00f2ff", grav: 0.68, friction: 0.92, rough: 1.28, waveA: 0.36, waveB: 0.18 },
+    { name: "Mars Rover", sky: "#4d1a00", ground: "#d2691e", line: "#8b4513", grav: 0.24, friction: 0.9, rough: 1.24, waveA: 0.3, waveB: 0.15 },
+    { name: "Cyber Neon", sky: "#1a0033", ground: "#000", line: "#ff00ff", grav: 0.9, friction: 0.88, rough: 1.38, waveA: 0.42, waveB: 0.2 },
+    { name: "Snow Peak", sky: "#e0f7fa", ground: "#ffffff", line: "#b2ebf2", grav: 0.5, friction: 0.82, rough: 1.18, waveA: 0.28, waveB: 0.14 },
+    { name: "Moon Run", sky: "#0f1222", ground: "#8f95a8", line: "#dbe4ff", grav: 0.12, friction: 0.84, rough: 1.52, waveA: 0.4, waveB: 0.2 }
+];
+
+let state = {
+    wallet: parseInt(localStorage.getItem('hc_ult_s')) || 0,
+    ownedC: JSON.parse(localStorage.getItem('hc_ult_c')) || [0],
+    hiDist: parseInt(localStorage.getItem('hc_ult_h')) || 0,
+    selC: 0, selS: 0, active: false
+};
+
+const GAME_RULES = {
+    warningSpeedKmh: 180,
+    chaseReleaseFrames: 75,
+    speedingEngageFrames: 180,
+    slowDownClearFrames: 120,
+    policeRestFrames: 300,
+    mudMinSpeedKmh: 40,
+    mudSlowSpeedKmh: 60,
+    autoCruiseKmh: 5,
+    comboSpeedRatio: 0.9
+};
+
+let car = { x: 100, y: 0, vx: 0, vy: 0, rot: 0, fuel: 100, runC: 0, nitro: 100, wRot: 0, onGround: false, jumpCd: 0, crashCount: 0, warnUntil: 0, fireFrames: 0, comboFrames: 0, comboBonus: 0, comboMult: 1, burningOut: false };
+let cop = { x: -1500, vx: 0, active: false, pulse: 0, minSpd: 14.5, warningSpeed: GAME_RULES.warningSpeedKmh, engaged: false, cool: 0, speedingFrames: 0, slowFrames: 0, restFrames: 0 };
+
+function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+}
+
+function getCopTuning(model) {
+    return {
+        minSpd: clamp(model.top * 0.66, 10.8, 18.5),
+        lead: clamp(model.top * 0.2, 2.2, 5.2),
+        catchup: clamp(model.top * 0.28, 3.2, 7.2),
+        response: clamp(0.2 + (model.speedLimit - 118) / 400, 0.2, 0.3)
+    };
+}
+
+/**
+ * INITIALIZATION
+ */
+const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
+window.onresize = resize; resize();
+
+function updateUI() {
+    document.getElementById('wallet').innerText = state.wallet;
+    document.getElementById('best').innerText = state.hiDist;
+    document.getElementById('spd-limit').innerText = MODELS[state.selC].speedLimit;
+    
+    const cl = document.getElementById('car-list'); cl.innerHTML = '';
+    MODELS.forEach((m, i) => {
+        const owned = state.ownedC.includes(i);
+        cl.innerHTML += `<div class="item-row" onmouseenter="previewCar(${i})" onmouseleave="previewCar(state.selC)">
+            <div style="text-align:left">
+                <div style="font-weight:bold">${m.name}</div>
+                <div class="stat-chip">TOP ${Math.floor(m.top * 12)} KM/H</div>
+                <div class="stat-chip">LIMIT ${m.speedLimit} KM/H</div>
+                <div class="stat-chip">POWER ${m.pwr.toFixed(2)}</div>
+                <div class="stat-chip">WEIGHT ${m.mass.toFixed(2)}</div>
+            </div>
+            ${owned ? `<button class="${state.selC==i?'sel':'buy'}" onclick="state.selC=${i};updateUI()">${state.selC==i?'SELECTED':'SELECT'}</button>` : 
+            `<button class="buy" onclick="buy(${i})">$${m.price}</button>`}
+        </div>`;
+    });
+
+    const sl = document.getElementById('stage-list'); sl.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        sl.innerHTML += `<div class="item-row" onclick="state.selS=${i};updateUI()">
+            <div style="text-align:left">
+                <div style="font-weight:bold">${s.name}</div>
+                <div class="stat-chip">GRAV ${s.grav.toFixed(2)}</div>
+                <div class="stat-chip">GRIP ${s.friction.toFixed(2)}</div>
+            </div>
+            <button class="${state.selS==i?'sel':'buy'}">${state.selS==i?'SELECTED':'SELECT'}</button>
+        </div>`;
+    });
+
+    previewCar(state.selC);
+}
+
+function buy(i) {
+    if(state.wallet >= MODELS[i].price) {
+        state.wallet -= MODELS[i].price; state.ownedC.push(i);
+        localStorage.setItem('hc_ult_s', state.wallet);
+        localStorage.setItem('hc_ult_c', JSON.stringify(state.ownedC));
+        updateUI();
+    }
+}
+
+function switchTab(t) {
+    document.getElementById('car-view').style.display = t === 'car' ? 'block' : 'none';
+    document.getElementById('stg-view').style.display = t === 'stg' ? 'block' : 'none';
+    document.getElementById('t-car').className = t === 'car' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('t-stg').className = t === 'stg' ? 'tab-btn active' : 'tab-btn';
+    if(t === 'car') drawGaragePreview();
+}
+
+function previewCar(i) {
+    previewCarIndex = clamp(i, 0, MODELS.length - 1);
+    drawGaragePreview();
+}
+
+function drawGaragePreview() {
+    const m = MODELS[previewCarIndex];
+    if(!m) return;
+    const gc = garageCtx;
+    const gw = garageCanvas.width, gh = garageCanvas.height;
+    gc.clearRect(0, 0, gw, gh);
+
+    const bg = gc.createLinearGradient(0, 0, 0, gh);
+    bg.addColorStop(0, "#223455");
+    bg.addColorStop(1, "#0e141e");
+    gc.fillStyle = bg;
+    gc.fillRect(0, 0, gw, gh);
+
+    gc.fillStyle = "rgba(255,255,255,0.2)";
+    gc.fillRect(0, gh - 40, gw, 3);
+    gc.fillStyle = "rgba(0,0,0,0.2)";
+    gc.fillRect(0, gh - 37, gw, 18);
+
+    gc.save();
+    gc.translate(gw * 0.5, gh * 0.72);
+    const scale = Math.min(1.2, 86 / m.w);
+    gc.scale(scale, scale);
+    gc.rotate(-0.02);
+    drawVehicleToCtx(gc, 0, 0, m, 0, false, 0, 0.4);
+    gc.restore();
+
+    gc.fillStyle = "rgba(255,255,255,0.92)";
+    gc.font = "bold 18px Trebuchet MS";
+    gc.fillText(m.name, 14, 28);
+    gc.font = "12px Trebuchet MS";
+    gc.fillStyle = "rgba(220,232,255,0.9)";
+    gc.fillText(`Top ${Math.floor(m.top * 12)} km/h  |  Limit ${m.speedLimit}  |  Weight ${m.mass.toFixed(2)}`, 14, 49);
+}
+
+function queueJump() {
+    jumpQueued = true;
+}
+
+/**
+ * WORLD LOGIC
+ */
+function getTY(x) {
+    let i = Math.floor(x / 100);
+    if(i < 0) return h * 0.7;
+    if(!terrain[i+1]) return terrain[i]?.y || h * 0.7;
+    let t = (x % 100) / 100;
+    return terrain[i].y * (1 - t) + terrain[i+1].y * t;
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+    document.getElementById('pause-menu').style.display = isPaused ? 'flex' : 'none';
+    if(!isPaused) requestAnimationFrame(loop);
+}
+
+function start() {
+    const s = STAGES[state.selS];
+    terrain = []; items = []; obstacles = []; muds = [];
+    camShakeFrames = 0; camShakePower = 0;
+    // Generate infinite-feeling terrain
+    for(let i=0; i<8000; i++) {
+        let distanceFactor = 1 + Math.min(i / 2200, 2.4);
+        let roughness = (58 + Math.min(i/4.5, 120)) * s.rough * distanceFactor;
+        let ty = h * 0.7
+            + Math.sin(i * s.waveA) * roughness
+            + Math.cos(i * s.waveB) * (roughness / 2)
+            + Math.sin(i * (s.waveA * 2.05)) * (12 + distanceFactor * 16);
+        if(i > 1200 && i % 58 === 0 && Math.random() > 0.72) {
+            ty += 26 + distanceFactor * 26; // Deeper pits later in the run.
+        }
+        terrain.push({x: i * 100, y: ty});
+        
+        // Spawn logical gameplay items
+        if(i > 10) {
+            if(i % 12 === 0) items.push({x: i*100, y: ty-60, type:'c', got: false});
+            if(i % 45 === 0) items.push({x: i*100, y: ty-60, type:'f', got: false});
+            if(i % 55 === 0) items.push({x: i*100, y: ty-95, type:'n', got: false});
+            if(i % 24 === 0 && Math.random() > 0.22) obstacles.push({x: i*100 + 50, y: ty, type: 'cone', hit: false});
+            if(i % 28 === 0 && Math.random() > 0.38) muds.push({x: i*100 + 15, w: 90 + Math.random()*45});
+        }
+    }
+    
+    car = { x: 100, y: getTY(100) - 25, vx: 0, vy: 0, rot: 0, fuel: 100, runC: 0, nitro: 100, wRot: 0, onGround: false, jumpCd: 0, crashCount: 0, warnUntil: 0, fireFrames: 0, comboFrames: 0, comboBonus: 0, comboMult: 1, burningOut: false };
+    const copTune = getCopTuning(MODELS[state.selC]);
+    cop = { x: -2000, vx: 0, active: false, pulse: 0, minSpd: copTune.minSpd, warningSpeed: MODELS[state.selC].speedLimit, engaged: false, cool: 0, speedingFrames: 0, slowFrames: 0, restFrames: 0 };
+    state.active = true; isPaused = false;
+    
+    document.getElementById('menu').style.display = 'none';
+    document.getElementById('pause-menu').style.display = 'none';
+    document.getElementById('results-menu').style.display = 'none';
+    document.getElementById('hud-container').style.display = 'block';
+    document.getElementById('ui-side').style.display = 'block';
+    document.getElementById('chase-ui').style.display = 'none';
+    document.getElementById('mud-ui').style.display = 'none';
+    document.getElementById('crash-ui').style.display = 'none';
+    document.getElementById('spd-limit').innerText = MODELS[state.selC].speedLimit;
+    document.getElementById('coins-run').innerText = "0";
+    document.getElementById('combo-mult').innerText = "1.0";
+    document.getElementById('combo-bonus').innerText = "0";
+    
+    requestAnimationFrame(loop);
+}
+
+/**
+ * GAME LOOP
+ */
+function loop() {
+    if(!state.active || isPaused) return;
+    const m = MODELS[state.selC], s = STAGES[state.selS];
+    const autoCruiseVx = GAME_RULES.autoCruiseKmh / 12;
+    
+    // INPUT HANDLING & PHYSICS
+    let isNitro = keys.ShiftLeft && car.nitro > 0;
+    const topNow = m.top * (isNitro ? 1.6 : 1);
+    const priceRatio = clamp(m.price / 15000, 0, 1);
+    // Only slow launch for cheaper cars; keep top-end pull close to original.
+    const launchPenalty = car.vx < 8 ? (0.62 + priceRatio * 0.38) : 1;
+    let acceleration = (m.pwr / m.mass) * launchPenalty * (isNitro ? 2.4 : 1);
+    const rollingGrip = clamp(s.friction + (m.grip - 1) * 0.012, 0.9, 0.998);
+    const wantsJump = jumpQueued || keys.ArrowUp || keys.KeyW || keys.KeyJ;
+    const isBraking = keys.Space || keys.KeyS;
+    if(car.jumpCd > 0) car.jumpCd--;
+    jumpQueued = false;
+    
+    if(isNitro) car.nitro -= 1.2; 
+    else if(car.nitro < 100) car.nitro += 0.08;
+    if(isNitro) {
+        camShakeFrames = Math.max(camShakeFrames, 2);
+        camShakePower = Math.max(camShakePower, 1.6);
+    }
+
+    if(isBraking) {
+        car.vx = 0;
+    } else if(keys.ArrowRight || keys.KeyD) {
+        if(car.vx < topNow) car.vx += acceleration;
+        car.fuel -= 0.12;
+    } else if(keys.ArrowLeft || keys.KeyA) {
+        if(car.vx > -m.top * 0.35) car.vx -= 0.2;
+        car.fuel -= 0.07;
+    } else {
+        car.vx *= rollingGrip;
+    }
+
+    car.vx *= clamp(0.997 - (m.mass - 1) * 0.0018, 0.992, 0.999);
+    car.vy += s.grav;
+    car.x += car.vx;
+    car.y += car.vy;
+
+    // TERRAIN COLLISION
+    let groundY = getTY(car.x);
+    car.onGround = false;
+    if(car.y > groundY - 25) {
+        let settleY = groundY - 25;
+        let penetration = car.y - settleY;
+        car.y -= penetration * 0.7;
+        if(Math.abs(car.y - settleY) < 0.5) car.y = settleY;
+        car.vy = Math.min(0, car.vy) * clamp(0.35 / m.mass, 0.15, 0.4);
+        car.onGround = true;
+        // Smoothly align body to the slope for stability.
+        let slope = Math.atan2(getTY(car.x + 30) - getTY(car.x - 30), 60);
+        car.rot += (slope - car.rot) * clamp(0.12 + (m.grip - 1) * 0.07, 0.08, 0.18);
+    } else {
+        // Damp air rotation so the vehicle does not spin wildly.
+        car.rot += clamp(car.vx * 0.0032 * m.air * (s.grav / 0.42), -0.065, 0.065);
+        car.rot *= 0.995;
+    }
+    if(wantsJump && car.onGround && car.jumpCd === 0) {
+        car.vy = -m.jump;
+        car.y -= 1;
+        car.onGround = false;
+        car.jumpCd = 28;
+    }
+
+    // Auto cruise floor to prevent full stopping unless braking.
+    if(!isBraking && car.onGround && car.vx >= 0 && car.vx < autoCruiseVx) {
+        car.vx += 0.045 / m.mass;
+        if(car.vx > autoCruiseVx) car.vx = autoCruiseVx;
+    }
+
+    let speedKmh = Math.max(0, car.vx * 12);
+    const inMud = muds.some(md =>
+        car.x >= md.x && car.x <= md.x + md.w && car.y >= getTY(car.x) - 28
+    );
+    if(inMud) {
+        if(speedKmh < GAME_RULES.mudMinSpeedKmh) {
+            car.vx = 0;
+            document.getElementById('mud-ui').innerText = `STUCK IN MUD: SPEED BELOW ${GAME_RULES.mudMinSpeedKmh} KM/H`;
+            document.getElementById('mud-ui').style.display = 'block';
+        } else if(speedKmh < GAME_RULES.mudSlowSpeedKmh) {
+            car.vx *= 0.82;
+            speedKmh = Math.max(0, car.vx * 12);
+            document.getElementById('mud-ui').innerText = `MUD SLOWDOWN: KEEP ${GAME_RULES.mudSlowSpeedKmh}+ KM/H`;
+            document.getElementById('mud-ui').style.display = 'block';
+        } else {
+            document.getElementById('mud-ui').style.display = 'none';
+        }
+    } else {
+        document.getElementById('mud-ui').style.display = 'none';
+    }
+    speedKmh = Math.max(0, car.vx * 12);
+    car.rot = clamp(car.rot, -Math.PI, Math.PI);
+    
+    car.wRot += car.vx * 0.2;
+    coinRot += 0.1;
+
+    // POLICE AI - pursues only while player is speeding.
+    if(car.x > 1200 || speedKmh >= cop.warningSpeed) {
+        cop.active = true;
+    }
+    
+    if(cop.active) {
+        const copTune = getCopTuning(m);
+        cop.minSpd = copTune.minSpd;
+        const isSpeeding = speedKmh >= cop.warningSpeed;
+        if(cop.restFrames > 0) {
+            cop.restFrames--;
+            cop.engaged = false;
+            cop.speedingFrames = 0;
+            cop.slowFrames = 0;
+        } else if(isSpeeding) {
+            cop.slowFrames = 0;
+            cop.speedingFrames++;
+            if(!cop.engaged && cop.speedingFrames >= GAME_RULES.speedingEngageFrames) {
+                cop.engaged = true;
+                cop.cool = 0;
+            }
+            if(cop.engaged) cop.cool = 0;
+        } else {
+            if(cop.engaged || cop.speedingFrames > 0) {
+                cop.slowFrames++;
+                if(cop.slowFrames >= GAME_RULES.slowDownClearFrames) {
+                    if(cop.engaged) cop.restFrames = GAME_RULES.policeRestFrames;
+                    cop.engaged = false;
+                    cop.cool = 0;
+                    cop.speedingFrames = 0;
+                    cop.slowFrames = 0;
+                }
+            } else {
+                cop.slowFrames = 0;
+            }
+        }
+
+        if(cop.engaged) {
+            let targetSpeed = Math.max(car.vx + copTune.lead, cop.minSpd);
+            if(car.x - cop.x > 650) targetSpeed += copTune.catchup;
+            cop.vx += (targetSpeed - cop.vx) * copTune.response;
+        } else {
+            let calmSpeed = Math.max(1.8, car.vx * 0.55);
+            cop.vx += (calmSpeed - cop.vx) * 0.1;
+            // Back off if the cop is too close when pursuit is off.
+            if(cop.x > car.x - 700) cop.x -= 3.2;
+        }
+
+        cop.x += cop.vx;
+        cop.pulse++;
+        const secsToChase = Math.max(0, Math.ceil((GAME_RULES.speedingEngageFrames - cop.speedingFrames) / 60));
+        const secsToClear = Math.max(0, Math.ceil((GAME_RULES.slowDownClearFrames - cop.slowFrames) / 60));
+        const secsPoliceRest = Math.max(0, Math.ceil(cop.restFrames / 60));
+        document.getElementById('chase-ui').innerText = cop.engaged
+            ? (isSpeeding
+                ? "POLICE PURSUIT IN PROGRESS"
+                : `HOLD SAFE SPEED ${secsToClear}s TO SHAKE POLICE`)
+            : (cop.restFrames > 0
+                ? `POLICE BACKING OFF ${secsPoliceRest}s`
+                : (cop.speedingFrames > 0
+                    ? (isSpeeding
+                        ? `SLOW DOWN! PURSUIT IN ${secsToChase}s`
+                        : `HOLD SAFE SPEED ${secsToClear}s`)
+                    : `SAFE SPEED - LIMIT ${cop.warningSpeed} KM/H`));
+        document.getElementById('chase-ui').style.display = (cop.engaged || cop.speedingFrames > 0 || cop.slowFrames > 0 || cop.restFrames > 0 || car.x > 1200) ? 'block' : 'none';
+        
+        // Arrest logic
+        if (cop.engaged && Math.abs(car.x - cop.x) < 70 && Math.abs(car.y - getTY(cop.x)) < 60) {
+            endGame("BUSTED!");
+            return;
+        }
+    }
+
+    // ITEM COLLECTION
+    items.forEach(it => {
+        if(!it.got && Math.hypot(car.x - it.x, car.y - it.y) < 50) {
+            it.got = true;
+            if(it.type === 'c') car.runC += 100;
+            else if(it.type === 'f') car.fuel = 100;
+            else if(it.type === 'n') car.nitro = Math.min(100, car.nitro + 40);
+        }
+    });
+
+    // OBSTACLE COLLISION
+    obstacles.forEach(o => {
+        if(!o.hit && Math.abs(car.x - o.x) < 40 && Math.abs(car.y - o.y) < 50) {
+            o.hit = true;
+            car.vx *= clamp(0.14 + m.mass * 0.14, 0.2, 0.42);
+            car.vy = -clamp(6 / m.mass, 2.8, 6);
+            camShakeFrames = Math.max(camShakeFrames, 12);
+            camShakePower = Math.max(camShakePower, 5.5);
+            car.crashCount++;
+            if(car.crashCount >= 7 && car.crashCount < 10) {
+                car.warnUntil = 140;
+            }
+            if(car.crashCount >= 10 && !car.burningOut) {
+                car.fireFrames = 110;
+                car.burningOut = true;
+            }
+        }
+    });
+
+    if(car.warnUntil > 0) {
+        car.warnUntil--;
+        document.getElementById('crash-ui').innerText = `WARNING: ${car.crashCount}/10 SPEED BREAKER HITS`;
+        document.getElementById('crash-ui').style.display = 'block';
+    } else {
+        document.getElementById('crash-ui').style.display = 'none';
+    }
+
+    if(car.burningOut) {
+        car.fireFrames--;
+        car.vx *= 0.95;
+        camShakeFrames = Math.max(camShakeFrames, 4);
+        camShakePower = Math.max(camShakePower, 2.4);
+        if(car.fireFrames <= 0) {
+            endGame("ENGINE FIRE!");
+            return;
+        }
+    }
+
+    // Combo reward for sustained top-speed driving.
+    const comboThreshold = m.speedLimit * GAME_RULES.comboSpeedRatio;
+    if(speedKmh >= comboThreshold && !isBraking) {
+        car.comboFrames++;
+        car.comboMult = 1 + Math.min(3, car.comboFrames / 240);
+        if(car.comboFrames % 60 === 0) {
+            const comboCash = Math.floor(22 * car.comboMult);
+            car.runC += comboCash;
+            car.comboBonus += comboCash;
+        }
+    } else {
+        car.comboFrames = 0;
+        car.comboMult = 1;
+    }
+
+    // HUD UPDATES
+    document.getElementById('kmh').innerText = Math.floor(speedKmh);
+    document.getElementById('kmh').className = speedKmh >= m.speedLimit ? "nitro-txt" : "";
+    document.getElementById('dist').innerText = Math.floor(car.x / 10);
+    document.getElementById('coins-run').innerText = car.runC;
+    document.getElementById('combo-mult').innerText = car.comboMult.toFixed(1);
+    document.getElementById('combo-bonus').innerText = car.comboBonus;
+    document.getElementById('f-bar').style.width = car.fuel + "%";
+    document.getElementById('n-bar').style.width = car.nitro + "%";
+
+    if(car.fuel <= 0) endGame("OUT OF FUEL");
+    if(Math.abs(car.rot) > Math.PI * 0.65 && car.y >= groundY - 30) endGame("FLIPPED!");
+
+    draw();
+    requestAnimationFrame(loop);
+}
+
+function endGame(msg) {
+    state.active = false;
+    state.wallet += car.runC;
+    let dist = Math.floor(car.x / 10);
+    if(dist > state.hiDist) {
+        state.hiDist = dist;
+        localStorage.setItem('hc_ult_h', dist);
+    }
+    localStorage.setItem('hc_ult_s', state.wallet);
+    
+    document.getElementById('res-title').innerText = msg;
+    document.getElementById('res-dist').innerText = dist;
+    document.getElementById('res-coins').innerText = "$" + car.runC;
+    document.getElementById('results-menu').style.display = 'flex';
+    document.getElementById('chase-ui').style.display = 'none';
+    document.getElementById('mud-ui').style.display = 'none';
+    document.getElementById('crash-ui').style.display = 'none';
+}
+
+/**
+ * RENDER ENGINE
+ */
+function draw() {
+    const s = STAGES[state.selS], m = MODELS[state.selC];
+    let shakeX = 0, shakeY = 0;
+    if(camShakeFrames > 0) {
+        shakeX = (Math.random() - 0.5) * camShakePower;
+        shakeY = (Math.random() - 0.5) * camShakePower;
+        camShakeFrames--;
+        camShakePower *= 0.9;
+    }
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+    
+    // 1. SKY & PARALLAX
+    ctx.fillStyle = s.sky;
+    ctx.fillRect(0, 0, w, h);
+    
+    let off = car.x - 400;
+
+    // 2. TERRAIN
+    ctx.beginPath();
+    ctx.fillStyle = s.ground;
+    ctx.moveTo(0, h);
+    terrain.forEach(p => {
+        if(p.x > off - 200 && p.x < off + w + 200) {
+            ctx.lineTo(p.x - off, p.y);
+        }
+    });
+    ctx.lineTo(w, h);
+    ctx.fill();
+    
+    // Ground Line
+    ctx.strokeStyle = s.line;
+    ctx.lineWidth = 8;
+    ctx.stroke();
+
+    // 3. MUD POOLS
+    muds.forEach(md => {
+        const mx = md.x - off;
+        if(mx + md.w > -60 && mx < w + 60) {
+            const my = getTY(md.x + md.w * 0.5);
+            ctx.fillStyle = "rgba(76, 46, 23, 0.55)";
+            ctx.fillRect(mx, my - 6, md.w, 10);
+            ctx.fillStyle = "rgba(120, 76, 36, 0.46)";
+            ctx.fillRect(mx + 6, my - 9, md.w - 12, 6);
+            ctx.fillStyle = "rgba(165, 121, 70, 0.25)";
+            ctx.fillRect(mx + 14, my - 11, md.w - 28, 3);
+        }
+    });
+
+    // 4. ITEMS (Beautifully Rendered)
+    items.forEach(it => {
+        if(!it.got && it.x > off - 50 && it.x < off + w + 50) {
+            ctx.save();
+            ctx.translate(it.x - off, it.y);
+            if(it.type === 'c') {
+                // Spinning Gold Coin with shine.
+                ctx.rotate(Math.sin(coinRot) * 0.25);
+                ctx.scale(Math.max(0.2, Math.cos(coinRot)), 1);
+                const coinGrad = ctx.createRadialGradient(-4, -5, 2, 0, 0, 17);
+                coinGrad.addColorStop(0, "#fff5ab");
+                coinGrad.addColorStop(0.45, "#ffd447");
+                coinGrad.addColorStop(1, "#b97800");
+                ctx.fillStyle = coinGrad;
+                ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = "#6d4200"; ctx.lineWidth = 2.5; ctx.stroke();
+                ctx.fillStyle = "rgba(255,255,255,0.35)";
+                ctx.beginPath(); ctx.arc(-4, -5, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 15px Trebuchet MS";
+                ctx.fillText("$", -5, 5);
+            } else {
+                if(it.type === 'f') {
+                    // Fuel Canister
+                    let fg = ctx.createLinearGradient(0, -16, 0, 16);
+                    fg.addColorStop(0, "#ff7f70");
+                    fg.addColorStop(1, "#b31510");
+                    ctx.fillStyle = fg;
+                    ctx.beginPath();
+                    ctx.roundRect(-12, -16, 24, 32, 4);
+                    ctx.fill();
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(-8, -9, 16, 4);
+                    ctx.fillStyle = "#75100d";
+                    ctx.fillRect(-2, -4, 4, 18);
+                } else {
+                    // Nitro Capsule
+                    let ng = ctx.createLinearGradient(0, -18, 0, 18);
+                    ng.addColorStop(0, "#7df0ff");
+                    ng.addColorStop(1, "#0087a8");
+                    ctx.fillStyle = ng;
+                    ctx.beginPath();
+                    ctx.roundRect(-11, -18, 22, 36, 10);
+                    ctx.fill();
+                    ctx.fillStyle = "#023044";
+                    ctx.fillRect(-3, -12, 6, 24);
+                    ctx.fillStyle = "rgba(255,255,255,0.45)";
+                    ctx.fillRect(-8, -12, 3, 20);
+                }
+            }
+            ctx.restore();
+        }
+    });
+
+    // 5. OBSTACLES (Beautifully Rendered)
+    obstacles.forEach(o => {
+        if(o.x > off - 50 && o.x < off + w + 50) {
+            ctx.save();
+            ctx.translate(o.x - off, getTY(o.x));
+            // Traffic Cone with base and shadow.
+            ctx.fillStyle = "rgba(0,0,0,0.22)";
+            ctx.fillRect(-24, 0, 48, 6);
+            let coneGrad = ctx.createLinearGradient(0, -45, 0, 0);
+            coneGrad.addColorStop(0, o.hit ? "#888" : "#ff9658");
+            coneGrad.addColorStop(1, o.hit ? "#4a4a4a" : "#dd4d00");
+            ctx.fillStyle = coneGrad;
+            ctx.beginPath();
+            ctx.moveTo(-20, 0); ctx.lineTo(0, -45); ctx.lineTo(20, 0); ctx.fill();
+            // Stripes
+            ctx.fillStyle = "rgba(255,255,255,0.92)";
+            ctx.fillRect(-11, -31, 22, 8);
+            ctx.fillRect(-8, -18, 16, 6);
+            ctx.fillStyle = "#3a2a15";
+            ctx.fillRect(-24, 0, 48, 4);
+            ctx.restore();
+        }
+    });
+
+    // 6. POLICE VEHICLE
+    if(cop.active) {
+        drawVehicle(cop.x - off, getTY(cop.x) - 20, {w: 85, h: 30, color: "#000", wheel: 12}, 0, true, cop.pulse);
+    }
+
+    // 7. PLAYER VEHICLE
+    drawVehicle(car.x - off, car.y, m, car.rot, false, 0);
+
+    // 8. Police Screen-Space Effect
+    if(cop.engaged) {
+        const flash = (Math.sin(cop.pulse * 0.45) + 1) / 2;
+        const edgeW = Math.max(80, w * 0.09);
+        const left = ctx.createLinearGradient(0, 0, edgeW, 0);
+        left.addColorStop(0, `rgba(0, 130, 255, ${0.2 + flash * 0.32})`);
+        left.addColorStop(1, "rgba(0,130,255,0)");
+        ctx.fillStyle = left;
+        ctx.fillRect(0, 0, edgeW, h);
+
+        const right = ctx.createLinearGradient(w, 0, w - edgeW, 0);
+        right.addColorStop(0, `rgba(255, 50, 50, ${0.2 + (1 - flash) * 0.32})`);
+        right.addColorStop(1, "rgba(255,50,50,0)");
+        ctx.fillStyle = right;
+        ctx.fillRect(w - edgeW, 0, edgeW, h);
+    }
+    ctx.restore();
+}
+
+function drawVehicle(x, y, m, rot, isCop, pulse) {
+    drawVehicleToCtx(ctx, x, y, m, rot, isCop, pulse, car.wRot);
+}
+
+function drawVehicleToCtx(c, x, y, m, rot, isCop, pulse, wheelRot) {
+    c.save();
+    c.translate(x, y);
+    c.rotate(rot);
+    const policeStyle = isCop || m.name === "Police Interceptor";
+
+    // Nitro Flame Logic
+    if(!isCop && keys.ShiftLeft && car.nitro > 0) {
+        c.fillStyle = Math.random() > 0.5 ? "#ff9000" : "#00d2ff";
+        c.beginPath();
+        c.moveTo(-m.w/2, -5);
+        c.lineTo(-m.w/2 - 40 - Math.random()*20, -m.h/4);
+        c.lineTo(-m.w/2, -15);
+        c.fill();
+    }
+    if(!isCop && car.crashCount >= 8) {
+        const smokeCount = 3 + Math.floor(Math.random() * 3);
+        for(let i=0; i<smokeCount; i++) {
+            const sx = -m.w/3 + Math.random() * (m.w * 0.66);
+            const sy = -m.h * 0.95 - Math.random() * (m.h * 0.9);
+            const sr = 5 + Math.random() * 9;
+            c.fillStyle = `rgba(70,70,70,${0.22 + Math.random()*0.24})`;
+            c.beginPath();
+            c.arc(sx, sy, sr, 0, Math.PI * 2);
+            c.fill();
+        }
+    }
+    if(!isCop && car.burningOut) {
+        for(let i=0; i<5; i++) {
+            const fx = -m.w/4 + Math.random() * (m.w/2);
+            const fy = -m.h/2 - 4 - Math.random() * (m.h * 0.8);
+            c.fillStyle = Math.random() > 0.5 ? "rgba(255,120,20,0.9)" : "rgba(255,220,80,0.85)";
+            c.beginPath();
+            c.arc(fx, fy, 4 + Math.random() * 7, 0, Math.PI * 2);
+            c.fill();
+        }
+        c.fillStyle = "rgba(40,40,40,0.32)";
+        c.fillRect(-m.w/4, -m.h*1.6, m.w/2, m.h*0.9);
+    }
+
+    // Car Chassis
+    let bodyGrad = c.createLinearGradient(0, -m.h, 0, 12);
+    if(policeStyle) {
+        bodyGrad.addColorStop(0, "#2f3442");
+        bodyGrad.addColorStop(1, "#090a0d");
+    } else {
+        bodyGrad.addColorStop(0, "#ffffff");
+        bodyGrad.addColorStop(0.14, m.color);
+        bodyGrad.addColorStop(1, "#1c1f2b");
+    }
+    c.fillStyle = bodyGrad;
+    c.shadowBlur = 10; c.shadowColor = "rgba(0,0,0,0.5)";
+    c.beginPath();
+    c.roundRect(-m.w/2, -m.h/1.5, m.w, m.h/1.5, 8);
+    c.fill();
+    c.shadowBlur = 0;
+    if(!policeStyle) {
+        c.fillStyle = m.accent || "rgba(255,255,255,0.5)";
+        c.fillRect(-m.w/2 + 12, -m.h/1.5 + 6, m.w * 0.26, 4);
+        c.fillRect(m.w * 0.08, -m.h/1.5 + 6, m.w * 0.18, 4);
+        c.fillStyle = "rgba(0,0,0,0.2)";
+        c.fillRect(-m.w/2 + 10, 0, m.w - 20, 2);
+    }
+    c.fillStyle = "rgba(255,255,255,0.18)";
+    c.fillRect(-m.w/2 + 8, -m.h/1.5 + 2, m.w * 0.45, 3);
+
+    // Cockpit / Windows
+    let winGrad = c.createLinearGradient(0, -m.h*1.1, 0, -m.h/2);
+    winGrad.addColorStop(0, "rgba(180, 242, 255, 0.88)");
+    winGrad.addColorStop(1, "rgba(45, 116, 171, 0.55)");
+    c.fillStyle = winGrad;
+    c.beginPath();
+    c.roundRect(-m.w/6, -m.h * 1.1, m.w/2.2, m.h/1.8, [15, 15, 0, 0]);
+    c.fill();
+    c.fillStyle = "rgba(255,255,255,0.18)";
+    c.fillRect(-m.w/6 + 3, -m.h * 1.02, m.w/6, 2);
+
+    // Police Lights
+    if(policeStyle) {
+        c.fillStyle = pulse % 12 < 6 ? "#ff0000" : "#0000ff";
+        c.fillRect(-10, -m.h - 10, 25, 8);
+        // Headlights
+        c.fillStyle = "white"; c.fillRect(m.w/2 - 5, -m.h/2, 5, 5);
+    } else {
+        c.fillStyle = "rgba(255, 248, 200, 0.95)";
+        c.fillRect(m.w/2 - 7, -m.h/2 + 2, 6, 4);
+        // Taillight
+        c.fillStyle = "rgba(255, 70, 70, 0.8)";
+        c.fillRect(-m.w/2 + 1, -m.h/2 + 2, 5, 3);
+        // Underglow by class.
+        c.fillStyle = m.price >= 5000 ? "rgba(0, 210, 255, 0.28)" : "rgba(255, 214, 71, 0.2)";
+        c.fillRect(-m.w/2 + 12, 6, m.w - 24, 3);
+        // Spoiler for premium cars.
+        if(m.price >= 5000) {
+            c.fillStyle = "rgba(25,25,25,0.92)";
+            c.fillRect(-m.w/2 - 1, -m.h * 0.95, 16, 3);
+            c.fillRect(-m.w/2 + 2, -m.h * 0.95, 2, 7);
+            c.fillRect(-m.w/2 + 11, -m.h * 0.95, 2, 7);
+        }
+    }
+
+    // Wheels
+    c.fillStyle = "rgba(0,0,0,0.25)";
+    c.fillRect(-m.w/3 - m.wheel, -3, m.wheel * 2, 3);
+    c.fillRect(m.w/3 - m.wheel, -3, m.wheel * 2, 3);
+    renderWheel(c, -m.w/3, 5, m.wheel, wheelRot);
+    renderWheel(c, m.w/3, 5, m.wheel, wheelRot);
+
+    c.restore();
+}
+
+function renderWheel(c, x, y, size, rot) {
+    c.save();
+    c.translate(x, y);
+    c.rotate(rot);
+    
+    // Tire
+    let tireGrad = c.createRadialGradient(-2, -2, 2, 0, 0, size + 2);
+    tireGrad.addColorStop(0, "#4a4a4a");
+    tireGrad.addColorStop(1, "#101010");
+    c.fillStyle = tireGrad;
+    c.beginPath(); c.arc(0, 0, size, 0, Math.PI*2); c.fill();
+    
+    // Rim
+    c.strokeStyle = "#8b8b8b"; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(0, 0, size * 0.6, 0, Math.PI*2); c.stroke();
+    c.fillStyle = "#282828";
+    c.beginPath(); c.arc(0, 0, size * 0.2, 0, Math.PI*2); c.fill();
+    
+    // Spokes
+    for(let i=0; i<5; i++) {
+        c.rotate(Math.PI * 2 / 5);
+        c.beginPath(); c.moveTo(0, 0); c.lineTo(size, 0); c.stroke();
+    }
+    c.restore();
+}
+
+/**
+ * EVENT LISTENERS
+ */
+window.onkeydown = e => keys[e.code] = true;
+window.onkeyup = e => keys[e.code] = false;
+
+function bindHoldControl(id, keyCode) {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const press = e => { e.preventDefault(); keys[keyCode] = true; };
+    const release = e => { e.preventDefault(); keys[keyCode] = false; };
+    el.addEventListener('pointerdown', press);
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+    el.addEventListener('pointerleave', release);
+}
+
+bindHoldControl('accel-btn', 'ArrowRight');
+bindHoldControl('brake-btn', 'Space');
+
+// Initialize
+updateUI();
+</script>
+</body>
+</html>
